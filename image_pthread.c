@@ -72,9 +72,6 @@ void *convolute(void* vars){
     int rankIt = (srcImage->height) / NUM_THREADS;
     int start = rankIt * rank;
     int end = rankIt * (rank + 1)-1;
-    if(rank == NUM_THREADS){
-        end += ((srcImage->height)%NUM_THREADS)+1;
-    }
     
     span=srcImage->bpp*srcImage->bpp;
     for (row=start;row<=end;row++){
