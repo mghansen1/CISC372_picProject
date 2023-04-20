@@ -77,7 +77,7 @@ void *convolute(void* vars){
     
     int row,pix,bit,span;
     int rankIt = srcImage->height / thread_count;
-    int start = rankIt * rank;
+    int start = rankIt * rank + 1;
     int end = rankIt * (rank + 1);
     span=srcImage->bpp*srcImage->bpp;
     for (row=start;row<=end;row++){
