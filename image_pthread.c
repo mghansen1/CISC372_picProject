@@ -136,7 +136,7 @@ int main(int argc,char** argv){
     
     int i;
     for(i=0; i<nThreads; i++) {
-        struct arg_struct *args = malloc(sizeof(struct arg_struct));
+        struct arg_struct *args = malloc(sizeof(arg_struct));
         args->srcImage = &srcImage;
         args->destImage = &destImage;
         args->type = type;
