@@ -3,7 +3,7 @@
 #include <time.h>
 #include <string.h>
 #include <pthread.h>
-#include "image_p.h"
+#include "image_pthread.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -11,18 +11,19 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-#define nThreads 10
-
-struct arg_struct {
-    Image* srcImage;
-    Image* destImage;
-    enum KernelTypes type;
-    int rank;
-};
+#define NUM_THREADS 10
 
 //An array of kernel matrices to be used for image convolution.  
 //The indexes of these match the enumeration from the header file. ie. algorithms[BLUR] returns the kernel corresponding to a box blur.
-Matrix algorithm[]={
+struct arg_struct {
+	Image* source_image; 
+	Image* dest_image; 
+	enum KernelTypes type;
+	int rank;
+	int num_threads;
+};
+
+Matrix algorithms[]={
     {{0,-1,0},{-1,4,-1},{0,-1,0}},
     {{0,-1,0},{-1,5,-1},{0,-1,0}},
     {{1/9.0,1/9.0,1/9.0},{1/9.0,1/9.0,1/9.0},{1/9.0,1/9.0,1/9.0}},
@@ -68,25 +69,28 @@ uint8_t getPixelValue(Image* srcImage,int x,int y,int bit,Matrix algorithm){
 //Returns: Nothing
 void *convolute(void* vars){
     struct args_struct *args = vars;
-    Image* srcImage = args->srcImage;
-    Image* destImage = args->destImage;
+    Image* srcImage = args->source_image;
+    Image* destImage = args->dest_image;    
     int rank = args->rank;
+    int thread_count = args->thread_count;
     enum KernelTypes type = args->type;
+    
     int row,pix,bit,span;
-    int rowIt = (srcImage->height)/nThreads;
-    int rowMin = rowIt*rank;
-    int rowMax = rowIt*(rank+1)-1;
-    if(rank == nThreads){
-        rowMax += ((srcImage->height)%nThreads)+1;
+    int rankIt = srcImage->height / thread_count;
+    int start = rankIt * rank;
+    int end = rankIt * (rank + 1)-1;
+    if(rank == thread_count){
+        end += ((srcImage->height)%thread_count)+1;
     }
     span=srcImage->bpp*srcImage->bpp;
-    for (row=rowMin;row<rowMax;row++){
+    for (row=start;row<=end;row++){
         for (pix=0;pix<srcImage->width;pix++){
             for (bit=0;bit<srcImage->bpp;bit++){
-                destImage->data[Index(pix,row,srcImage->width,bit,srcImage->bpp)]=getPixelValue(srcImage,pix,row,bit,algorithm[type]);
+                destImage->data[Index(pix,row,srcImage->width,bit,srcImage->bpp)]=getPixelValue(srcImage,pix,row,bit,algorithms[type]);
             }
         }
     }
+    free(vars);
 }
 
 //Usage: Prints usage information for the program
@@ -112,8 +116,6 @@ enum KernelTypes GetKernelType(char* type){
 //argv is expected to take 2 arguments.  First is the source file name (can be jpg, png, bmp, tga).  Second is the lower case name of the algorithm.
 int main(int argc,char** argv){
     long t1,t2;
-    t1=time(NULL);
-    pthread_t* thread_id = (pthread_t*) malloc(nThreads * sizeof(pthread_t));
 
     stbi_set_flip_vertically_on_load(0); 
     if (argc!=3) return Usage();
@@ -129,29 +131,33 @@ int main(int argc,char** argv){
         printf("Error loading file %s.\n",fileName);
         return -1;
     }
+    t1 = time(NULL);
     destImage.bpp=srcImage.bpp;
     destImage.height=srcImage.height;
     destImage.width=srcImage.width;
     destImage.data=malloc(sizeof(uint8_t)*destImage.width*destImage.bpp*destImage.height);
     
-    int i;
-    for(i=0; i<nThreads; i++) {
+    pthread_t* thread_handles;
+    thread_handles = (pthread_t*) malloc(NUM_THREADS * sizeof(pthread_t));
+    long thread;
+    for(thread = 0; thread < NUM_THREADS; thread++){
         struct arg_struct *args = malloc(sizeof(struct arg_struct));
-        args->srcImage = &srcImage;
-        args->destImage = &destImage;
-        args->type = type;
-        args->rank = i;
-        pthread_create( &thread_id[i], NULL, convolute, args );
+        args->source_image = &srcImage;
+        args->dest_image = &destImage;
+        args->type = type; 
+        args->rank = thread;
+        args->num_threads = NUM_THREADS;
+        pthread_create(&thread_handles[thread], NULL, convolute ,args);
     }
-    for(i=0; i<nThreads; i++) {
-        pthread_join( thread_id[i], NULL );
-    }
-    free(thread_id);
+    
     stbi_write_png("output.png",destImage.width,destImage.height,destImage.bpp,destImage.data,destImage.bpp*destImage.width);
     stbi_image_free(srcImage.data);
-    
+    t2 = time(NULL);
+    for (thread = 0; thread < NUM_THREADS; thread++){
+    	pthread_join(thread_handles[thread], NULL);
+    }
+    free(thread_handles);
     free(destImage.data);
-    t2=time(NULL);
     printf("Took %ld seconds\n",t2-t1);
-   return 0;
+    return 0;
 }
