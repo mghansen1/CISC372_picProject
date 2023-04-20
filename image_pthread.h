@@ -15,7 +15,7 @@ enum KernelTypes{EDGE=0,SHARPEN=1,BLUR=2,GAUSE_BLUR=3,EMBOSS=4,IDENTITY=5};
 
 typedef double Matrix[3][3];
 
-struct args_struct {
+struct args_struct{
     Image* source_image;
     Image* dest_image;
     enum KernelTypes type;
