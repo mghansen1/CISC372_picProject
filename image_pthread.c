@@ -13,12 +13,7 @@
 
 #define nThreads 10
 
-struct args_struct {
-    Image* srcImage;
-    Image* destImage;
-    enum KernelTypes type;
-    int rank;
-};
+
 
 //An array of kernel matrices to be used for image convolution.  
 //The indexes of these match the enumeration from the header file. ie. algorithms[BLUR] returns the kernel corresponding to a box blur.
