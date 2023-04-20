@@ -77,8 +77,9 @@ void *convolute(void* vars){
     
     int row,pix,bit,span;
     int rankIt = srcImage->height / thread_count;
-    int start = rankIt * rank + 1;
-    int end = rankIt * (rank + 1);
+    int start = rankIt * rank;
+    int end = rankIt * (rank + 1)-1;
+
     span=srcImage->bpp*srcImage->bpp;
     for (row=start;row<=end;row++){
         for (pix=0;pix<srcImage->width;pix++){
@@ -156,5 +157,5 @@ int main(int argc,char** argv){
     free(thread_handles);
     free(destImage.data);
     printf("Took %ld seconds\n",t2-t1);
-   return 0;
+    return 0;
 }
