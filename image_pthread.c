@@ -20,7 +20,6 @@ struct arg_struct {
 	Image* dest_image; 
 	enum KernelTypes type;
 	int rank;
-	int num_threads;
 };
 
 Matrix algorithms[]={
@@ -72,16 +71,16 @@ void *convolute(void* vars){
     Image* srcImage = args->source_image;
     Image* destImage = args->dest_image;    
     int rank = args->rank;
-    int thread_count = args->thread_count;
     enum KernelTypes type = args->type;
     
     int row,pix,bit,span;
-    int rankIt = srcImage->height / thread_count;
+    int rankIt = srcImage->height / NUM_THREADS;
     int start = rankIt * rank;
     int end = rankIt * (rank + 1)-1;
-    if(rank == thread_count){
-        end += ((srcImage->height)%thread_count)+1;
+    if(rank == NUM_THREADS){
+        end += ((srcImage->height)%NUM_THREADS)+1;
     }
+    
     span=srcImage->bpp*srcImage->bpp;
     for (row=start;row<=end;row++){
         for (pix=0;pix<srcImage->width;pix++){
@@ -146,7 +145,6 @@ int main(int argc,char** argv){
         args->dest_image = &destImage;
         args->type = type; 
         args->rank = thread;
-        args->num_threads = NUM_THREADS;
         pthread_create(&thread_handles[thread], NULL, convolute ,args);
     }
     
