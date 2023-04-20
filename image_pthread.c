@@ -22,7 +22,7 @@ struct arg_struct {
 	int rank;
 };
 
-Matrix algorithms[]={
+Matrix algorithm[]={
     {{0,-1,0},{-1,4,-1},{0,-1,0}},
     {{0,-1,0},{-1,5,-1},{0,-1,0}},
     {{1/9.0,1/9.0,1/9.0},{1/9.0,1/9.0,1/9.0},{1/9.0,1/9.0,1/9.0}},
@@ -74,7 +74,7 @@ void *convolute(void* vars){
     enum KernelTypes type = args->type;
     
     int row,pix,bit,span;
-    int rankIt = srcImage->height / NUM_THREADS;
+    int rankIt = (srcImage->height) / NUM_THREADS;
     int start = rankIt * rank;
     int end = rankIt * (rank + 1)-1;
     if(rank == NUM_THREADS){
@@ -85,7 +85,7 @@ void *convolute(void* vars){
     for (row=start;row<=end;row++){
         for (pix=0;pix<srcImage->width;pix++){
             for (bit=0;bit<srcImage->bpp;bit++){
-                destImage->data[Index(pix,row,srcImage->width,bit,srcImage->bpp)]=getPixelValue(srcImage,pix,row,bit,algorithms[type]);
+                destImage->data[Index(pix,row,srcImage->width,bit,srcImage->bpp)]=getPixelValue(srcImage,pix,row,bit,algorithm[type]);
             }
         }
     }
