@@ -62,7 +62,7 @@ uint8_t getPixelValue(Image* srcImage,int x,int y,int bit,Matrix algorithm){
 //            algorithm: The kernel matrix to use for the convolution
 //Returns: Nothing
 void *convolute(void* vars){
-    struct args_struct *args = vars;
+    struct arg_struct *args = vars;
     Image* srcImage = args->srcImage;
     Image* destImage = args->destImage;
     int rank = args->rank;
